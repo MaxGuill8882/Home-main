@@ -1,7 +1,8 @@
 {
   "displayed": [
     "Home Task Service",
-    "google"
+    "google",
+    "settings"
   ],
   "hidden": [
     "safari",
@@ -13,7 +14,6 @@
     "notes",
     "calendar",
     "music",
-    "settings",
     "camera",
     "weather",
     "files",
