@@ -89,7 +89,8 @@ function appButton(app, compact = false) {
   button.title = app.name;
   button.setAttribute('aria-label', `Ouvrir ${app.name}`);
   const image = document.createElement('img');
-  image.src = `config/apps/${app.image}`;
+  const cacheBust = app.id === 'google' ? '?v=2' : '';
+  image.src = `config/apps/${app.image}${cacheBust}`;
   image.alt = '';
   const label = document.createElement('span');
   label.textContent = app.name;
