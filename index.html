@@ -29,18 +29,18 @@
           <polyline points="21 3 21 9 15 9"/>
         </svg>
       </button>
-      <!-- Wi-Fi -->
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+      <!-- Réseau -->
+      <svg id="network-status" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-label="Réseau">
         <path d="M2 8.5a17 17 0 0 1 20 0"/>
         <path d="M5.5 12.5a12 12 0 0 1 13 0"/>
         <path d="M9 16.3a6.5 6.5 0 0 1 6 0"/>
         <circle cx="12" cy="19.5" r="1.1" fill="currentColor" stroke="none"/>
       </svg>
       <!-- Batterie -->
-      <svg width="26" height="14" viewBox="0 0 26 14" fill="none">
+      <svg id="battery-status" width="26" height="14" viewBox="0 0 26 14" fill="none" aria-label="Batterie">
         <rect x="1" y="1" width="21" height="12" rx="3" stroke="currentColor" stroke-width="1.4"/>
         <rect x="23" y="4.5" width="2" height="5" rx="1" fill="currentColor"/>
-        <rect x="3" y="3" width="17" height="8" rx="1.6" fill="currentColor"/>
+        <rect id="battery-level" x="3" y="3" width="17" height="8" rx="1.6" fill="currentColor"/>
       </svg>
     </div>
   </div>
@@ -111,6 +111,7 @@
   <div id="app-gesture-zone" aria-hidden="true"></div>
   <button id="app-dock-trigger" type="button" aria-label="Afficher la barre d'applications" title="Afficher la barre d'applications"></button>
 </div>
+<div id="app-swipe-layer" aria-hidden="true"></div>
 
 <!-- Réglages du lanceur -->
 <div id="settings-panel" aria-hidden="true">

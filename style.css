@@ -210,9 +210,16 @@ html, body {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 45;
+  z-index: 100;
   pointer-events: auto;
 }
+#dock-wrap.from-app.dock-idle {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(18px);
+}
+#dock-wrap.from-app,
+#dock-wrap.from-app.dock-idle { transition: opacity 0.2s ease, transform 0.2s ease; }
 #dock-wrap.from-app #dock-home { display: flex; }
 
 #dock {
@@ -374,15 +381,15 @@ html, body {
 }
 #app-view-title { font-size: 14px; }
 #app-frame { width: 100%; height: 100%; flex: 1; min-height: 100vh; border: 0; background: #fff; display: block; }
-#app-gesture-zone { position: absolute; left: 50%; bottom: 0; width: 240px; height: 80px; transform: translateX(-50%); z-index: 2; touch-action: none; }
+#app-gesture-zone { position: absolute; left: 50%; bottom: 0; width: 300px; height: 120px; transform: translateX(-50%); z-index: 10; touch-action: none; }
 #app-dock-trigger {
   position: absolute;
   left: 50%;
   bottom: 5px;
-  width: 150px;
-  height: 22px;
+  width: 300px;
+  height: 44px;
   transform: translateX(-50%);
-  z-index: 3;
+  z-index: 11;
   border: 0;
   border-radius: 8px;
   background: transparent;
@@ -395,14 +402,26 @@ html, body {
   position: absolute;
   left: 50%;
   bottom: 2px;
-  width: 118px;
-  height: 4px;
+  width: 236px;
+  height: 8px;
   transform: translateX(-50%);
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.9);
   box-shadow: var(--text-shadow);
 }
 #app-dock-trigger:hover, #app-dock-trigger:focus-visible { opacity: 1; }
+#app-swipe-layer {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  width: 100vw;
+  height: 220px;
+  transform: translateX(-50%);
+  z-index: 90;
+  pointer-events: none;
+  touch-action: none;
+}
+body.app-open #app-swipe-layer { pointer-events: auto; }
 
 /* ---------- Réglages ---------- */
 #settings-panel {
