@@ -1,9 +1,12 @@
 {
   "displayed": [
+    "Home Task Service",
+    "google"
+  ],
+  "hidden": [
     "safari",
     "mail",
     "photos",
-    "google",
     "appstore",
     "youtube",
     "maps",
@@ -15,8 +18,6 @@
     "weather",
     "files",
     "facetime",
-    "reminders",
-    "Home Task Service"
-  ],
-  "hidden": []
+    "reminders"
+  ]
 }
