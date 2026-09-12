@@ -1,0 +1,6 @@
+{
+  "name": "Photos",
+  "image": "icons/photos.svg",
+  "url": "app.html?app=photos",
+  "dock": true
+}

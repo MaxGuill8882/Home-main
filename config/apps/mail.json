@@ -1,0 +1,6 @@
+{
+  "name": "Mail",
+  "image": "icons/mail.svg",
+  "url": "app.html?app=mail",
+  "dock": true
+}

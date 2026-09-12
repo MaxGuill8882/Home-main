@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Écran d'accueil</title>
+<script>
+  window.HOME_LAYOUT_CONFIG = {
+    columns: 5,
+    rows: 4,
+    horizontalGap: 12,
+    verticalGap: 30,
+    iconSize: 80
+  };
+</script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -62,6 +71,7 @@
       <div id="dock-pinned"></div>
       <div id="dock-divider"></div>
       <div id="dock-recent"></div>
+      <button id="dock-home" type="button" aria-label="Revenir à l'accueil" title="Accueil">⌂</button>
     </div>
   </div>
 
@@ -80,6 +90,50 @@
   </div>
   <div id="switcher-track"></div>
   <p id="switcher-empty">Aucune application récente pour le moment.<br>Ouvrez une app depuis l'écran d'accueil pour la voir apparaître ici.</p>
+</div>
+
+<!-- Vue d'application plein écran -->
+<div id="app-view" aria-hidden="true">
+  <div id="app-view-bar">
+    <button id="app-view-home" aria-label="Revenir à l'accueil" title="Accueil">⌂</button>
+    <strong id="app-view-title"></strong>
+    <button id="app-view-close" aria-label="Fermer l'application" title="Fermer">×</button>
+  </div>
+  <iframe
+    id="app-frame"
+    title="Application intégrée"
+    width="100%"
+    height="100%"
+    style="border: none;"
+    loading="lazy"
+    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-top-navigation-by-user-activation"
+    allow="camera; microphone; fullscreen"></iframe>
+  <div id="app-gesture-zone" aria-hidden="true"></div>
+  <button id="app-dock-trigger" type="button" aria-label="Afficher la barre d'applications" title="Afficher la barre d'applications"></button>
+</div>
+
+<!-- Réglages du lanceur -->
+<div id="settings-panel" aria-hidden="true">
+  <div class="settings-sheet">
+    <div class="settings-header">
+      <button id="settings-close" aria-label="Fermer les réglages">×</button>
+      <h2>Réglages</h2>
+      <span></span>
+    </div>
+    <label class="setting-row">
+      <span><strong>Espacement des icônes</strong><small>Écarter les apps sur l'écran d'accueil</small></span>
+      <input id="icon-spacing" type="range" min="8" max="42" step="2" value="26">
+    </label>
+    <label class="setting-row">
+      <span><strong>Taille des icônes</strong><small>Adapter la taille à votre écran</small></span>
+      <input id="icon-size-setting" type="range" min="52" max="84" step="2" value="68">
+    </label>
+    <label class="setting-row setting-toggle">
+      <span><strong>Afficher les noms</strong><small>Afficher le nom sous chaque icône</small></span>
+      <input id="show-labels" type="checkbox" checked>
+    </label>
+    <button id="reset-settings" class="settings-action">Réinitialiser les réglages</button>
+  </div>
 </div>
 
 <script src="script.js"></script>

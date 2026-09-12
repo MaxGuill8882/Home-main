@@ -1,0 +1,5 @@
+{
+  "name": "Appareil photo",
+  "image": "icons/camera.svg",
+  "url": "app.html?app=camera"
+}

@@ -1,6 +1,6 @@
 {
   "name": "Safari",
   "image": "icons/safari.svg",
-  "url": "https://www.apple.com/safari/",
+  "url": "app.html?app=safari",
   "dock": true
 }

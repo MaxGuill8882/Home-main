@@ -1,0 +1,6 @@
+{
+  "name": "Google",
+  "image": "icons/google.svg",
+  "url": "https://google.com/?igu=1",
+  "dock": true
+}

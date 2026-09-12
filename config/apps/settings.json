@@ -1,0 +1,6 @@
+{
+  "name": "Reglages",
+  "image": "icons/settings.svg",
+  "url": "app.html?app=settings",
+  "dock": true
+}

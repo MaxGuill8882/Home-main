@@ -1,0 +1,6 @@
+{
+  "name": "Home Task Service",
+  "image": "icons/task.svg",
+  "url": "http://nas/taches",
+  "dock": true
+}

@@ -60,6 +60,31 @@ html, body {
 }
 #wallpaper-toggle:hover { opacity: 1; }
 
+/* ---------- Bandeau "mode démo" (fallback sans serveur local) ---------- */
+#config-mode {
+  display: none;
+  margin: 0 auto;
+  max-width: min(560px, 86vw);
+  padding: 9px 16px;
+  border-radius: 12px;
+  background: rgba(20, 20, 20, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+#config-mode.visible { display: block; }
+#config-mode code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
 /* ---------- Recherche ---------- */
 #search-wrap {
   display: flex;
@@ -94,18 +119,21 @@ html, body {
 /* ---------- Grille d'apps ---------- */
 #app-grid-wrap {
   flex: 1;
-  overflow-y: auto;
-  padding: 10px 4vw 6px;
+  overflow: hidden;
+  padding: 8px 3vw 6px;
 }
 
 #app-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--icon-size), 1fr));
+  grid-template-columns: repeat(var(--grid-columns, 8), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--grid-rows, 5), minmax(0, 1fr));
   justify-items: center;
-  gap: 26px 12px;
-  max-width: 900px;
+  align-items: center;
+  gap: var(--grid-row-gap, 26px) var(--grid-column-gap, 12px);
+  width: min(100%, 900px);
+  height: 100%;
   margin: 0 auto;
-  padding-top: 6px;
+  padding: 6px 0;
 }
 
 .app-icon {
@@ -120,7 +148,10 @@ html, body {
   color: #fff;
   padding: 0;
   font-family: inherit;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
 }
+.app-icon:focus, .app-icon:focus-visible { outline: none; }
 
 .app-icon img {
   width: var(--icon-size);
@@ -160,6 +191,15 @@ html, body {
   padding: 0 0 8px;
   flex-shrink: 0;
 }
+#dock-wrap.from-app {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 45;
+  pointer-events: auto;
+}
+#dock-wrap.from-app #dock-home { display: flex; }
 
 #dock {
   display: flex;
@@ -174,11 +214,49 @@ html, body {
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
 }
 
+.dock-app {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  border-radius: 14px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.dock-app:focus, .dock-app:focus-visible { outline: none; }
+.dock-app span { display: none; }
+
 #dock-pinned, #dock-recent {
   display: flex;
   align-items: center;
   gap: 14px;
 }
+
+#dock-home {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  margin-left: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-size: 23px;
+  line-height: 1;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+#dock-home:focus, #dock-home:focus-visible { outline: none; }
 
 #dock-divider {
   width: 1px;
@@ -247,6 +325,109 @@ html, body {
   pointer-events: auto;
 }
 
+/* ---------- Vue d'application ---------- */
+#app-view {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: #101218;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+#app-view.open { transform: translateY(0); pointer-events: auto; }
+#app-view-bar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: env(safe-area-inset-top) 16px 0;
+  background: rgba(18, 20, 28, 0.92);
+  color: #fff;
+}
+#app-view-bar button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.14);
+  color: #fff;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+#app-view-title { font-size: 14px; }
+#app-frame { width: 100%; height: 100%; flex: 1; min-height: 100vh; border: 0; background: #fff; display: block; }
+#app-gesture-zone { position: absolute; left: 50%; bottom: 0; width: 240px; height: 80px; transform: translateX(-50%); z-index: 2; touch-action: none; }
+#app-dock-trigger {
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  width: 150px;
+  height: 22px;
+  transform: translateX(-50%);
+  z-index: 3;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.16s ease;
+}
+#app-dock-trigger::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  width: 118px;
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--text-shadow);
+}
+#app-dock-trigger:hover, #app-dock-trigger:focus-visible { opacity: 1; }
+
+/* ---------- Réglages ---------- */
+#settings-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0,0,0,0.32);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+#settings-panel.open { opacity: 1; pointer-events: auto; }
+.settings-sheet {
+  width: min(520px, 100%);
+  margin: 0 auto;
+  padding: 16px 20px calc(22px + env(safe-area-inset-bottom));
+  border-radius: 24px 24px 0 0;
+  background: rgba(28, 30, 40, 0.94);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  color: #fff;
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+#settings-panel.open .settings-sheet { transform: translateY(0); }
+.settings-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.settings-header h2 { margin: 0; font-size: 20px; }
+.settings-header button { background: none; border: 0; color: #fff; font-size: 30px; cursor: pointer; }
+.setting-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.12); }
+.setting-row span { display: grid; gap: 4px; }
+.setting-row small { opacity: 0.65; font-size: 12px; }
+.setting-row input[type="range"] { width: 130px; accent-color: #75b9ff; }
+.setting-toggle input { width: 44px; height: 25px; accent-color: #3d9af2; }
+.settings-action { width: 100%; margin-top: 18px; padding: 12px; border: 1px solid var(--glass-border); border-radius: 12px; color: #fff; background: var(--glass-bg); font: inherit; cursor: pointer; }
+
+#app-grid.labels-hidden .app-icon span { display: none; }
+
 .switcher-header {
   display: flex;
   align-items: center;
@@ -296,6 +477,9 @@ html, body {
   gap: 14px;
   cursor: pointer;
   transition: transform 0.15s ease;
+  border: 1px solid var(--glass-border);
+  color: #fff;
+  font: inherit;
 }
 .switcher-card:active { transform: scale(0.97); }
 
@@ -347,7 +531,8 @@ html, body {
 /* ---------- Responsive ---------- */
 @media (max-width: 480px) {
   :root { --icon-size: 60px; }
-  #app-grid { gap: 22px 8px; }
+  #app-grid { gap: var(--grid-row-gap, 26px) var(--grid-column-gap, 12px); }
+  .dock-app { width: 48px; height: 48px; }
   #dock img { width: 48px; height: 48px; }
   .switcher-card { width: 150px; height: 210px; }
   .switcher-card img { width: 58px; height: 58px; }
