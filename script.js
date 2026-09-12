@@ -376,59 +376,45 @@ for (const target of [document, appView, appSwitcher]) {
   }, { passive: true });
 }
 
-$('#app-gesture-zone').addEventListener('pointerdown', (event) => {
-  event.preventDefault();
-  state.touchStart = { x: event.clientX, y: event.clientY };
-  event.currentTarget.setPointerCapture(event.pointerId);
-}, { passive: false, capture: true });
-$('#app-gesture-zone').addEventListener('pointerup', (event) => {
-  event.preventDefault();
-  if (state.touchStart) handleGesture(state.touchStart, { x: event.clientX, y: event.clientY });
-  state.touchStart = null;
-  if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-}, { passive: false, capture: true });
-$('#app-gesture-zone').addEventListener('pointercancel', () => {
-  state.touchStart = null;
-}, { passive: true });
-$('#app-gesture-zone').addEventListener('touchstart', (event) => {
-  event.preventDefault();
-  const touch = event.changedTouches[0];
-  state.touchStart = { x: touch.clientX, y: touch.clientY };
-}, { passive: false, capture: true });
-$('#app-gesture-zone').addEventListener('touchend', (event) => {
-  event.preventDefault();
-  const touch = event.changedTouches[0];
-  if (state.touchStart) handleGesture(state.touchStart, { x: touch.clientX, y: touch.clientY });
-  state.touchStart = null;
-}, { passive: false, capture: true });
+const gestureTargets = [$('#app-gesture-zone'), appSwipeLayer];
 
-appSwipeLayer.addEventListener('pointerdown', (event) => {
-  if (!appView.classList.contains('open')) return;
-  event.preventDefault();
-  state.touchStart = { x: event.clientX, y: event.clientY };
-  appSwipeLayer.setPointerCapture(event.pointerId);
-}, { passive: false });
-appSwipeLayer.addEventListener('pointerup', (event) => {
-  if (!appView.classList.contains('open')) return;
-  event.preventDefault();
-  if (state.touchStart) handleGesture(state.touchStart, { x: event.clientX, y: event.clientY });
-  state.touchStart = null;
-  if (appSwipeLayer.hasPointerCapture(event.pointerId)) appSwipeLayer.releasePointerCapture(event.pointerId);
-}, { passive: false });
-appSwipeLayer.addEventListener('pointercancel', () => { state.touchStart = null; }, { passive: true });
-appSwipeLayer.addEventListener('touchstart', (event) => {
-  if (!appView.classList.contains('open')) return;
-  event.preventDefault();
-  const touch = event.changedTouches[0];
-  state.touchStart = { x: touch.clientX, y: touch.clientY };
-}, { passive: false });
-appSwipeLayer.addEventListener('touchend', (event) => {
-  if (!appView.classList.contains('open') || !state.touchStart) return;
-  event.preventDefault();
-  const touch = event.changedTouches[0];
-  handleGesture(state.touchStart, { x: touch.clientX, y: touch.clientY });
-  state.touchStart = null;
-}, { passive: false });
+gestureTargets.forEach((target) => {
+  target.addEventListener('pointerdown', (event) => {
+    if (!appView.classList.contains('open')) return;
+    if (event.clientY <= window.innerHeight * 0.72) return;
+    event.preventDefault();
+    state.touchStart = { x: event.clientX, y: event.clientY };
+    target.setPointerCapture(event.pointerId);
+  }, { passive: false, capture: true });
+
+  target.addEventListener('pointerup', (event) => {
+    if (!appView.classList.contains('open') || !state.touchStart) return;
+    event.preventDefault();
+    handleGesture(state.touchStart, { x: event.clientX, y: event.clientY });
+    state.touchStart = null;
+    if (target.hasPointerCapture(event.pointerId)) target.releasePointerCapture(event.pointerId);
+  }, { passive: false, capture: true });
+
+  target.addEventListener('pointercancel', () => {
+    state.touchStart = null;
+  }, { passive: true, capture: true });
+
+  target.addEventListener('touchstart', (event) => {
+    if (!appView.classList.contains('open')) return;
+    const touch = event.changedTouches[0];
+    if (touch.clientY <= window.innerHeight * 0.72) return;
+    event.preventDefault();
+    state.touchStart = { x: touch.clientX, y: touch.clientY };
+  }, { passive: false, capture: true });
+
+  target.addEventListener('touchend', (event) => {
+    if (!appView.classList.contains('open') || !state.touchStart) return;
+    const touch = event.changedTouches[0];
+    event.preventDefault();
+    handleGesture(state.touchStart, { x: touch.clientX, y: touch.clientY });
+    state.touchStart = null;
+  }, { passive: false, capture: true });
+});
 
 readSettings();
 loadWallpapers();

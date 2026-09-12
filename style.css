@@ -381,7 +381,16 @@ html, body {
 }
 #app-view-title { font-size: 14px; }
 #app-frame { width: 100%; height: 100%; flex: 1; min-height: 100vh; border: 0; background: #fff; display: block; }
-#app-gesture-zone { position: absolute; left: 50%; bottom: 0; width: 300px; height: 120px; transform: translateX(-50%); z-index: 10; touch-action: none; }
+#app-gesture-zone {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 220px;
+  z-index: 45;
+  touch-action: none;
+  pointer-events: auto;
+}
 #app-dock-trigger {
   position: absolute;
   left: 50%;
@@ -389,7 +398,7 @@ html, body {
   width: 300px;
   height: 44px;
   transform: translateX(-50%);
-  z-index: 50;
+  z-index: 60;
   border: 0;
   border-radius: 8px;
   background: transparent;
@@ -413,11 +422,10 @@ html, body {
 #app-dock-trigger:hover, #app-dock-trigger:focus-visible { opacity: 1; }
 #app-swipe-layer {
   position: fixed;
-  left: 50%;
+  left: 0;
   bottom: 0;
   width: 100vw;
   height: 220px;
-  transform: translateX(-50%);
   z-index: 40;
   pointer-events: auto;
   touch-action: none;
