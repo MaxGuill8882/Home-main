@@ -28,9 +28,12 @@ const layoutConfig = {
 
 const state = {
   apps: [],
+  appVisibility: null,
   recent: JSON.parse(localStorage.getItem('home-recent') || '[]'),
-  settings: { spacing: layoutConfig.verticalGap, size: layoutConfig.iconSize, labels: true },
+  settings: { spacing: layoutConfig.verticalGap, size: layoutConfig.iconSize, blur: 0, labels: true },
   touchStart: null,
+  wallpapers: ['wallpaper.png'],
+  wallpaperIndex: 0,
   navigationId: 0
 };
 
@@ -47,7 +50,11 @@ const settingsPanel = $('#settings-panel');
 
 async function loadApps() {
   try {
-    const manifest = await fetch('config/apps/manifest.json').then((response) => response.json());
+    const [manifest, appVisibility] = await Promise.all([
+      fetch('config/apps/manifest.json').then((response) => response.json()),
+      fetch('apps.json').then((response) => response.json())
+    ]);
+    state.appVisibility = appVisibility;
     const loadedApps = await Promise.all(manifest.map(async (file) => {
       try {
         const response = await fetch(`config/apps/${encodeURIComponent(file)}`);
@@ -58,7 +65,10 @@ async function loadApps() {
         return null;
       }
     }));
-    state.apps = loadedApps.filter(Boolean);
+    const loaded = loadedApps.filter(Boolean);
+    const displayed = Array.isArray(appVisibility.displayed) ? new Set(appVisibility.displayed) : null;
+    const hidden = new Set(Array.isArray(appVisibility.hidden) ? appVisibility.hidden : []);
+    state.apps = loaded.filter((app) => (!displayed || displayed.has(app.id)) && !hidden.has(app.id));
     if (!state.apps.length) throw new Error('Aucune application chargee');
   } catch (error) {
     state.apps = defaultApps.map(([id, name, image, url, dock]) => ({ id, name, image, url, dock }));
@@ -156,6 +166,7 @@ function readSettings() {
   try { state.settings = { ...state.settings, ...JSON.parse(localStorage.getItem('home-settings') || '{}') }; } catch (_) {}
   $('#icon-spacing').value = state.settings.spacing;
   $('#icon-size-setting').value = state.settings.size;
+  $('#background-blur-setting').value = state.settings.blur;
   $('#show-labels').checked = state.settings.labels;
 }
 
@@ -165,6 +176,7 @@ function applySettings() {
   document.documentElement.style.setProperty('--grid-column-gap', `${layoutConfig.horizontalGap}px`);
   document.documentElement.style.setProperty('--grid-row-gap', `${state.settings.spacing}px`);
   document.documentElement.style.setProperty('--icon-size', `${state.settings.size}px`);
+  document.documentElement.style.setProperty('--background-blur', `${state.settings.blur}px`);
   appGrid.classList.toggle('labels-hidden', !state.settings.labels);
 }
 
@@ -172,6 +184,7 @@ function saveSettings() {
   state.settings = {
     spacing: Number($('#icon-spacing').value),
     size: Number($('#icon-size-setting').value),
+    blur: Number($('#background-blur-setting').value),
     labels: $('#show-labels').checked
   };
   localStorage.setItem('home-settings', JSON.stringify(state.settings));
@@ -206,10 +219,27 @@ $('#search-input').addEventListener('input', (event) => {
     button.classList.toggle('hidden', !button.textContent.toLocaleLowerCase().includes(query));
   });
 });
+function applyWallpaper(filename) {
+  const encodedFilename = encodeURIComponent(filename);
+  document.documentElement.style.setProperty('--wallpaper-image', `url("config/background/${encodedFilename}")`);
+  state.wallpaper = filename;
+  state.wallpaperIndex = Math.max(0, state.wallpapers.indexOf(filename));
+  localStorage.setItem('home-wallpaper', filename);
+}
+
+async function loadWallpapers() {
+  try {
+    const manifest = await fetch('config/background/manifest.json').then((response) => response.json());
+    if (Array.isArray(manifest) && manifest.length) state.wallpapers = manifest;
+  } catch (_) {}
+  const savedWallpaper = localStorage.getItem('home-wallpaper');
+  const initialWallpaper = state.wallpapers.includes(savedWallpaper) ? savedWallpaper : state.wallpapers[0];
+  applyWallpaper(initialWallpaper);
+}
+
 $('#wallpaper-toggle').addEventListener('click', () => {
-  state.wallpaper = state.wallpaper === 'wallpaper-aurore.jpg' ? 'wallpaper-mousse.jpg' : 'wallpaper-aurore.jpg';
-  document.querySelector('#screen').style.backgroundImage = `url("config/background/${state.wallpaper}")`;
-  localStorage.setItem('home-wallpaper', state.wallpaper);
+  const nextIndex = (state.wallpaperIndex + 1) % state.wallpapers.length;
+  applyWallpaper(state.wallpapers[nextIndex]);
 });
 $('#config-mode').addEventListener('click', (event) => event.currentTarget.classList.remove('visible'));
 $('#home-indicator').addEventListener('click', showSwitcher);
@@ -220,9 +250,9 @@ $('#app-view-close').addEventListener('click', goHome);
 $('#app-dock-trigger').addEventListener('click', showAppDock);
 $('#settings-close').addEventListener('click', closeSettings);
 settingsPanel.addEventListener('click', (event) => { if (event.target === settingsPanel) closeSettings(); });
-['#icon-spacing', '#icon-size-setting', '#show-labels'].forEach((selector) => $(selector).addEventListener('input', saveSettings));
+['#icon-spacing', '#icon-size-setting', '#background-blur-setting', '#show-labels'].forEach((selector) => $(selector).addEventListener('input', saveSettings));
 $('#reset-settings').addEventListener('click', () => {
-  state.settings = { spacing: layoutConfig.verticalGap, size: layoutConfig.iconSize, labels: true };
+  state.settings = { spacing: layoutConfig.verticalGap, size: layoutConfig.iconSize, blur: 0, labels: true };
   localStorage.removeItem('home-settings');
   readSettings();
   applySettings();
@@ -250,7 +280,6 @@ $('#app-gesture-zone').addEventListener('pointerup', (event) => {
   if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
 }, { passive: true });
 
-state.wallpaper = localStorage.getItem('home-wallpaper') || 'wallpaper-aurore.jpg';
-document.querySelector('#screen').style.backgroundImage = `url("config/background/${state.wallpaper}")`;
 readSettings();
+loadWallpapers();
 loadApps();
