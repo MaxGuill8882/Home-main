@@ -112,6 +112,15 @@ function render() {
   renderSwitcher();
 }
 
+function launchDockAppFromTarget(target) {
+  const button = target.closest('.dock-app');
+  if (!button) return;
+  const appId = button.dataset.appId;
+  const app = state.apps.find((item) => item.id === appId);
+  if (!app) return;
+  openApp(app);
+}
+
 function openApp(app) {
   if (app.id === 'settings') {
     openSettings();
@@ -131,9 +140,19 @@ function openApp(app) {
   });
 }
 
+function showAppDock() {
+  if (dockWrap.parentElement !== document.body) document.body.appendChild(dockWrap);
+  render();
+  dockWrap.classList.add('from-app');
+  dockWrap.classList.remove('dock-idle');
+  state.touchStart = null;
+  scheduleDockHide();
+}
+
 function goHome() {
   state.navigationId += 1;
   clearTimeout(state.dockHideTimer);
+  state.touchStart = null;
   screen.insertBefore(dockWrap, $('#home-indicator-wrap'));
   dockWrap.classList.remove('from-app');
   dockWrap.classList.remove('dock-idle');
@@ -142,14 +161,6 @@ function goHome() {
   appView.setAttribute('aria-hidden', 'true');
   appSwitcher.classList.remove('open');
   appFrame.src = 'about:blank';
-}
-
-function showAppDock() {
-  if (dockWrap.parentElement !== document.body) document.body.appendChild(dockWrap);
-  render();
-  dockWrap.classList.add('from-app');
-  dockWrap.classList.remove('dock-idle');
-  scheduleDockHide();
 }
 
 function scheduleDockHide() {
@@ -265,14 +276,29 @@ function closeSettings() {
   settingsPanel.setAttribute('aria-hidden', 'true');
 }
 
+function isDockVisible() {
+  return appView.classList.contains('open')
+    && dockWrap.parentElement === document.body
+    && dockWrap.classList.contains('from-app')
+    && !dockWrap.classList.contains('dock-idle');
+}
+
 function handleGesture(start, end) {
   const distance = start.y - end.y;
   const isBottomStart = start.y > window.innerHeight * 0.72;
+
   if (distance > 55 && isBottomStart) {
-    if (appView.classList.contains('open') && !dockWrap.classList.contains('from-app')) showAppDock();
-    else if (appView.classList.contains('open')) goHome();
-    else if (appSwitcher.classList.contains('open')) goHome();
+    if (appView.classList.contains('open') && !isDockVisible()) {
+      showAppDock();
+      return;
+    }
+    if (appView.classList.contains('open') && isDockVisible()) {
+      goHome();
+      return;
+    }
+    if (appSwitcher.classList.contains('open')) goHome();
   }
+
   if (distance < -55 && appSwitcher.classList.contains('open')) goHome();
 }
 
@@ -312,48 +338,20 @@ $('#app-view-home').addEventListener('click', goHome);
 $('#app-view-close').addEventListener('click', goHome);
 $('#app-dock-trigger').addEventListener('click', showAppDock);
 ['pointermove', 'pointerdown', 'click'].forEach((eventName) => dockWrap.addEventListener(eventName, keepDockVisible));
-dockWrap.addEventListener('pointerdown', (event) => {
-  if (!appView.classList.contains('open') || !['touch', 'pen'].includes(event.pointerType)) return;
-  event.preventDefault();
-  state.touchStart = { x: event.clientX, y: event.clientY };
-  dockWrap.setPointerCapture(event.pointerId);
-}, { passive: false, capture: true });
-dockWrap.addEventListener('pointerup', (event) => {
-  if (!state.touchStart || !appView.classList.contains('open') || !['touch', 'pen'].includes(event.pointerType)) return;
-  event.preventDefault();
-  const start = state.touchStart;
-  const end = { x: event.clientX, y: event.clientY };
-  state.touchStart = null;
-  if (start.y - end.y > 55) {
-    state.suppressDockClick = true;
-    goHome();
-  }
-  if (dockWrap.hasPointerCapture(event.pointerId)) dockWrap.releasePointerCapture(event.pointerId);
-}, { passive: false, capture: true });
-dockWrap.addEventListener('pointercancel', () => { state.touchStart = null; }, { passive: true, capture: true });
-dockWrap.addEventListener('touchstart', (event) => {
-  if (!appView.classList.contains('open')) return;
-  event.preventDefault();
-  const touch = event.changedTouches[0];
-  state.touchStart = { x: touch.clientX, y: touch.clientY };
-}, { passive: false, capture: true });
-dockWrap.addEventListener('touchend', (event) => {
-  if (!state.touchStart || !appView.classList.contains('open')) return;
-  event.preventDefault();
-  const touch = event.changedTouches[0];
-  const start = state.touchStart;
-  state.touchStart = null;
-  if (start.y - touch.clientY > 55) {
-    state.suppressDockClick = true;
-    goHome();
-  }
-}, { passive: false, capture: true });
 dockWrap.addEventListener('click', (event) => {
-  if (!state.suppressDockClick) return;
-  state.suppressDockClick = false;
-  event.preventDefault();
-  event.stopPropagation();
-}, true);
+  const dockButton = event.target.closest('.dock-app');
+  if (dockButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    launchDockAppFromTarget(dockButton);
+    return;
+  }
+  if (state.suppressDockClick) {
+    state.suppressDockClick = false;
+    event.preventDefault();
+    event.stopPropagation();
+  }
+});
 $('#settings-close').addEventListener('click', closeSettings);
 settingsPanel.addEventListener('click', (event) => { if (event.target === settingsPanel) closeSettings(); });
 ['#icon-spacing', '#icon-size-setting', '#background-blur-setting', '#show-labels'].forEach((selector) => $(selector).addEventListener('input', saveSettings));
@@ -363,18 +361,6 @@ $('#reset-settings').addEventListener('click', () => {
   readSettings();
   applySettings();
 });
-
-for (const target of [document, appView, appSwitcher]) {
-  target.addEventListener('pointerdown', (event) => {
-    if (event.pointerType === 'touch' || event.pointerType === 'pen') state.touchStart = { x: event.clientX, y: event.clientY };
-  }, { passive: true });
-  target.addEventListener('pointerup', (event) => {
-    if (state.touchStart && (event.pointerType === 'touch' || event.pointerType === 'pen')) {
-      handleGesture(state.touchStart, { x: event.clientX, y: event.clientY });
-      state.touchStart = null;
-    }
-  }, { passive: true });
-}
 
 const gestureTargets = [$('#app-gesture-zone'), appSwipeLayer];
 
@@ -415,6 +401,54 @@ gestureTargets.forEach((target) => {
     state.touchStart = null;
   }, { passive: false, capture: true });
 });
+
+dockWrap.addEventListener('pointerdown', (event) => {
+  if (!appView.classList.contains('open') || !isDockVisible()) return;
+  state.touchStart = { x: event.clientX, y: event.clientY };
+  dockWrap.setPointerCapture(event.pointerId);
+}, { passive: true, capture: true });
+
+dockWrap.addEventListener('pointerup', (event) => {
+  if (!state.touchStart || !appView.classList.contains('open') || !isDockVisible()) return;
+  const start = state.touchStart;
+  const end = { x: event.clientX, y: event.clientY };
+  const isSwipe = start.y - end.y > 55 && start.y > window.innerHeight * 0.72;
+  if (isSwipe) {
+    event.preventDefault();
+    state.suppressDockClick = true;
+  }
+  handleGesture(start, end);
+  state.touchStart = null;
+  if (dockWrap.hasPointerCapture(event.pointerId)) dockWrap.releasePointerCapture(event.pointerId);
+}, { passive: false, capture: true });
+
+dockWrap.addEventListener('pointercancel', () => {
+  state.touchStart = null;
+}, { passive: true, capture: true });
+
+dockWrap.addEventListener('touchstart', (event) => {
+  if (!appView.classList.contains('open') || !isDockVisible()) return;
+  const touch = event.changedTouches[0];
+  state.touchStart = { x: touch.clientX, y: touch.clientY };
+}, { passive: true, capture: true });
+
+dockWrap.addEventListener('touchend', (event) => {
+  if (!state.touchStart || !appView.classList.contains('open') || !isDockVisible()) return;
+  const touch = event.changedTouches[0];
+  const start = state.touchStart;
+  const end = { x: touch.clientX, y: touch.clientY };
+  const isSwipe = start.y - end.y > 55 && start.y > window.innerHeight * 0.72;
+  if (isSwipe) {
+    event.preventDefault();
+    state.suppressDockClick = true;
+    handleGesture(start, end);
+  }
+  state.touchStart = null;
+}, { passive: false, capture: true });
+
+dockWrap.addEventListener('touchcancel', () => {
+  state.touchStart = null;
+}, { passive: true, capture: true });
 
 readSettings();
 loadWallpapers();
